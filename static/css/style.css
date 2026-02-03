@@ -1,0 +1,297 @@
+/* Robot Dog Controller - Dark Theme */
+
+:root {
+    --primary-color: #2196F3;
+    --primary-dark: #1976D2;
+    --secondary-color: #4CAF50;
+    --accent-color: #FF9800;
+    --error-color: #f44336;
+    --success-color: #4CAF50;
+    --bg-color: #1a1a2e;
+    --bg-secondary: #16213e;
+    --bg-card: #0f3460;
+    --text-color: #eee;
+    --text-muted: #aaa;
+    --border-radius: 12px;
+    --spacing: 20px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-color);
+    color: var(--text-color);
+    min-height: 100vh;
+    padding: var(--spacing);
+    user-select: none;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing);
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    margin-bottom: var(--spacing);
+}
+
+header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+#connection-status {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+#connection-status.connected {
+    background: var(--success-color);
+    color: white;
+}
+
+#connection-status.disconnected {
+    background: var(--error-color);
+    color: white;
+}
+
+main {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+#robot-view {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: var(--spacing);
+    margin-bottom: var(--spacing);
+    display: flex;
+    justify-content: center;
+    position: relative;
+}
+
+#robot-canvas {
+    background: var(--bg-card);
+    border-radius: 8px;
+    max-width: 100%;
+    height: auto;
+    touch-action: none;
+    cursor: crosshair;
+}
+
+#robot-canvas.dragging {
+    cursor: grabbing;
+}
+
+.drag-hint {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    background: rgba(0,0,0,0.6);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+#controls {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: var(--spacing);
+    margin-bottom: var(--spacing);
+}
+
+.control-row {
+    display: flex;
+    gap: var(--spacing);
+    margin-bottom: var(--spacing);
+}
+
+.control-row:last-child {
+    margin-bottom: 0;
+}
+
+.control-row.center {
+    justify-content: center;
+}
+
+.control-group {
+    flex: 1;
+    background: var(--bg-card);
+    padding: var(--spacing);
+    border-radius: var(--border-radius);
+}
+
+.control-group h3 {
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 12px;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.drag-icon {
+    width: 16px;
+    height: 16px;
+    opacity: 0.6;
+}
+
+input[type="range"] {
+    width: 100%;
+    height: 8px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #333;
+    border-radius: 4px;
+    outline: none;
+    margin-bottom: 10px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 40px;
+    height: 40px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid var(--primary-dark);
+    transition: transform 0.1s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+}
+
+input[type="range"]::-webkit-slider-thumb:active {
+    transform: scale(0.95);
+    background: var(--primary-dark);
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 40px;
+    height: 40px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid var(--primary-dark);
+}
+
+.value-display {
+    display: block;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--accent-color);
+}
+
+.send-button {
+    background: var(--secondary-color);
+    color: white;
+    border: none;
+    padding: 15px 40px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.send-button:hover {
+    background: #43A047;
+    transform: translateY(-2px);
+}
+
+.send-button:active {
+    transform: translateY(0);
+    background: #388E3C;
+}
+
+#info {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: var(--spacing);
+    margin-bottom: var(--spacing);
+}
+
+#info p {
+    margin-bottom: 8px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+#info p:last-child {
+    margin-bottom: 0;
+}
+
+#info strong {
+    color: var(--text-color);
+}
+
+footer {
+    text-align: center;
+    padding: var(--spacing);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+#toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 24px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+
+    header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    header h1 {
+        font-size: 1.3rem;
+    }
+
+    .control-row {
+        flex-direction: column;
+    }
+
+    #robot-canvas {
+        width: 100%;
+        height: auto;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+        width: 50px;
+        height: 50px;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+        width: 50px;
+        height: 50px;
+    }
+}

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robot Dog Controller</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Robot Dog Controller</h1>
+        <div id="connection-status" class="disconnected">Disconnected</div>
+    </header>
+
+    <main>
+        <section id="robot-view">
+            <canvas id="robot-canvas" width="600" height="350"></canvas>
+            <div class="drag-hint">Drag orange/green circles</div>
+        </section>
+
+        <section id="controls">
+            <div class="control-row">
+                <div class="control-group">
+                    <h3><span class="drag-icon">🔵</span> Left Leg</h3>
+                    <input type="range" id="left-leg-slider" min="-15" max="105" value="45" step="1">
+                    <span class="value-display" id="left-leg-value">45.0°</span>
+                </div>
+
+                <div class="control-group">
+                    <h3><span class="drag-icon">🔵</span> Right Leg</h3>
+                    <input type="range" id="right-leg-slider" min="-15" max="105" value="45" step="1">
+                    <span class="value-display" id="right-leg-value">45.0°</span>
+                </div>
+            </div>
+
+            <div class="control-row">
+                <div class="control-group">
+                    <h3><span class="drag-icon">🟢</span> Left Joint</h3>
+                    <input type="range" id="left-joint-slider" min="0" max="60" value="0" step="1">
+                    <span class="value-display" id="left-joint-value">0.0°</span>
+                </div>
+
+                <div class="control-group">
+                    <h3><span class="drag-icon">🟢</span> Right Joint</h3>
+                    <input type="range" id="right-joint-slider" min="0" max="60" value="0" step="1">
+                    <span class="value-display" id="right-joint-value">0.0°</span>
+                </div>
+            </div>
+
+            <div class="control-row center">
+                <button id="send-btn" class="send-button">Send Now</button>
+            </div>
+        </section>
+
+        <section id="info">
+            <p><strong>Leg Range:</strong> -15° to 105° (45° ± 60°)</p>
+            <p><strong>Joint Range:</strong> 0° to 60° (relative to leg)</p>
+            <p><strong>Tip:</strong> Drag the orange pivots to rotate legs, green joints to bend knees</p>
+        </section>
+    </main>
+
+    <footer>
+        <p>Robot Dog Controller • Raspberry Pi Access Point</p>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/robot-canvas.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/controls.js') }}"></script>
+</body>
+</html>

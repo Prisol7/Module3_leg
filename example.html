@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robot Dog Controller</title>
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --primary-dark: #1976D2;
+            --secondary-color: #4CAF50;
+            --accent-color: #FF9800;
+            --error-color: #f44336;
+            --success-color: #4CAF50;
+            --bg-color: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-card: #0f3460;
+            --text-color: #eee;
+            --text-muted: #aaa;
+            --border-radius: 12px;
+            --spacing: 20px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            padding: var(--spacing);
+            user-select: none;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing);
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            margin-bottom: var(--spacing);
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        #connection-status {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        #connection-status.connected {
+            background: var(--success-color);
+            color: white;
+        }
+
+        #connection-status.disconnected {
+            background: var(--error-color);
+            color: white;
+        }
+
+        main {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        #robot-view {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: var(--spacing);
+            margin-bottom: var(--spacing);
+            display: flex;
+            justify-content: center;
+            position: relative;
+        }
+
+        #robot-canvas {
+            background: var(--bg-card);
+            border-radius: 8px;
+            max-width: 100%;
+            height: auto;
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        #robot-canvas.dragging {
+            cursor: grabbing;
+        }
+
+        .drag-hint {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            background: rgba(0,0,0,0.6);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        #controls {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: var(--spacing);
+            margin-bottom: var(--spacing);
+        }
+
+        .control-row {
+            display: flex;
+            gap: var(--spacing);
+            margin-bottom: var(--spacing);
+        }
+
+        .control-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-row.center {
+            justify-content: center;
+        }
+
+        .control-group {
+            flex: 1;
+            background: var(--bg-card);
+            padding: var(--spacing);
+            border-radius: var(--border-radius);
+        }
+
+        .control-group h3 {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 12px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .drag-icon {
+            width: 16px;
+            height: 16px;
+            opacity: 0.6;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #333;
+            border-radius: 4px;
+            outline: none;
+            margin-bottom: 10px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 40px;
+            height: 40px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid var(--primary-dark);
+            transition: transform 0.1s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:active {
+            transform: scale(0.95);
+            background: var(--primary-dark);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid var(--primary-dark);
+        }
+
+        .value-display {
+            display: block;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--accent-color);
+        }
+
+        .send-button {
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .send-button:hover {
+            background: #43A047;
+            transform: translateY(-2px);
+        }
+
+        .send-button:active {
+            transform: translateY(0);
+            background: #388E3C;
+        }
+
+        #info {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: var(--spacing);
+            margin-bottom: var(--spacing);
+        }
+
+        #info p {
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        #info p:last-child {
+            margin-bottom: 0;
+        }
+
+        #info strong {
+            color: var(--text-color);
+        }
+
+        footer {
+            text-align: center;
+            padding: var(--spacing);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+
+            header h1 {
+                font-size: 1.3rem;
+            }
+
+            .control-row {
+                flex-direction: column;
+            }
+
+            #robot-canvas {
+                width: 100%;
+                height: auto;
+            }
+
+            input[type="range"]::-webkit-slider-thumb {
+                width: 50px;
+                height: 50px;
+            }
+
+            input[type="range"]::-moz-range-thumb {
+                width: 50px;
+                height: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Robot Dog Controller</h1>
+        <div id="connection-status" class="disconnected">Disconnected</div>
+    </header>
+
+    <main>
+        <section id="robot-view">
+            <canvas id="robot-canvas" width="600" height="350"></canvas>
+            <div class="drag-hint">🖱️ Drag orange/green circles</div>
+        </section>
+
+        <section id="controls">
+            <div class="control-row">
+                <div class="control-group">
+                    <h3><span class="drag-icon">🔵</span> Left Leg</h3>
+                    <input type="range" id="left-leg-slider" min="-15" max="105" value="45" step="1">
+                    <span class="value-display" id="left-leg-value">45.0°</span>
+                </div>
+
+                <div class="control-group">
+                    <h3><span class="drag-icon">🔵</span> Right Leg</h3>
+                    <input type="range" id="right-leg-slider" min="-15" max="105" value="45" step="1">
+                    <span class="value-display" id="right-leg-value">45.0°</span>
+                </div>
+            </div>
+
+            <div class="control-row">
+                <div class="control-group">
+                    <h3><span class="drag-icon">🟢</span> Left Joint</h3>
+                    <input type="range" id="left-joint-slider" min="0" max="60" value="0" step="1">
+                    <span class="value-display" id="left-joint-value">0.0°</span>
+                </div>
+
+                <div class="control-group">
+                    <h3><span class="drag-icon">🟢</span> Right Joint</h3>
+                    <input type="range" id="right-joint-slider" min="0" max="60" value="0" step="1">
+                    <span class="value-display" id="right-joint-value">0.0°</span>
+                </div>
+            </div>
+
+            <div class="control-row center">
+                <button id="send-btn" class="send-button">Send Now</button>
+            </div>
+        </section>
+
+        <section id="info">
+            <p><strong>Leg Range:</strong> -15° to 105° (45° ± 60°)</p>
+            <p><strong>Joint Range:</strong> 0° to 60° (relative to leg)</p>
+            <p><strong>Tip:</strong> Drag the orange pivots to rotate legs, green joints to bend knees</p>
+        </section>
+    </main>
+
+    <footer>
+        <p>Robot Dog Controller • Raspberry Pi Access Point</p>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
+    
+    <script>
+        class RobotCanvas {
+            constructor(canvasId, onAngleChange) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.onAngleChange = onAngleChange;
+                
+                this.centerX = 300;
+                this.topY = 80;
+                this.legSpacing = 250;
+                this.legLength = 90;
+                this.jointLength = 70;
+                
+                this.colors = {
+                    leg: '#2196F3',
+                    joint: '#4CAF50',
+                    pivot: '#FF9800',
+                    label: '#ffffff',
+                    labelBg: 'rgba(0, 0, 0, 0.5)'
+                };
+                
+                this.state = {
+                    left_leg: { angle: 45 },
+                    left_joint: { angle: 0 },
+                    right_leg: { angle: 45 },
+                    right_joint: { angle: 0 }
+                };
+
+                // Dragging state
+                this.isDragging = false;
+                this.dragTarget = null; // { side: 'left'|'right', part: 'leg'|'joint' }
+                this.dragThreshold = 20; // pixels to grab handle
+
+                this.setupEvents();
+                this.render(this.state);
+            }
+
+            setupEvents() {
+                // Mouse events
+                this.canvas.addEventListener('mousedown', (e) => this.handleStart(e));
+                window.addEventListener('mousemove', (e) => this.handleMove(e));
+                window.addEventListener('mouseup', () => this.handleEnd());
+                
+                // Touch events
+                this.canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    this.handleStart(e.touches[0]);
+                }, { passive: false });
+                
+                window.addEventListener('touchmove', (e) => {
+                    if (this.isDragging) e.preventDefault();
+                    this.handleMove(e.touches[0]);
+                }, { passive: false });
+                
+                window.addEventListener('touchend', () => this.handleEnd());
+                
+                // Cursor feedback
+                this.canvas.addEventListener('mousemove', (e) => this.updateCursor(e));
+            }
+
+            getMousePos(evt) {
+                const rect = this.canvas.getBoundingClientRect();
+                const scaleX = this.canvas.width / rect.width;
+                const scaleY = this.canvas.height / rect.height;
+                return {
+                    x: (evt.clientX - rect.left) * scaleX,
+                    y: (evt.clientY - rect.top) * scaleY
+                };
+            }
+
+            distance(p1, p2) {
+                return Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
+            }
+
+            getLegGeometry(side) {
+                const pivotX = side === 'left' 
+                    ? this.centerX - this.legSpacing / 2 
+                    : this.centerX + this.legSpacing / 2;
+                const pivotY = this.topY;
+                
+                const legAngle = this.state[`${side}_leg`].angle * Math.PI / 180;
+                const jointAngle = (this.state[`${side}_leg`].angle + this.state[`${side}_joint`].angle) * Math.PI / 180;
+                
+                const kneeX = pivotX + this.legLength * Math.cos(legAngle);
+                const kneeY = pivotY + this.legLength * Math.sin(legAngle);
+                
+                const footX = kneeX + this.jointLength * Math.cos(jointAngle);
+                const footY = kneeY + this.jointLength * Math.sin(jointAngle);
+                
+                return {
+                    pivot: { x: pivotX, y: pivotY },
+                    knee: { x: kneeX, y: kneeY },
+                    foot: { x: footX, y: footY }
+                };
+            }
+
+            checkHit(pos) {
+                // Check legs (pivot points)
+                for (const side of ['left', 'right']) {
+                    const geom = this.getLegGeometry(side);
+                    if (this.distance(pos, geom.pivot) < this.dragThreshold) {
+                        return { side, part: 'leg', center: geom.pivot };
+                    }
+                    if (this.distance(pos, geom.knee) < this.dragThreshold) {
+                        return { side, part: 'joint', center: geom.knee };
+                    }
+                }
+                return null;
+            }
+
+            updateCursor(e) {
+                if (this.isDragging) return;
+                const pos = this.getMousePos(e);
+                const hit = this.checkHit(pos);
+                this.canvas.style.cursor = hit ? 'grab' : 'crosshair';
+            }
+
+            handleStart(e) {
+                const pos = this.getMousePos(e);
+                const hit = this.checkHit(pos);
+                
+                if (hit) {
+                    this.isDragging = true;
+                    this.dragTarget = hit;
+                    this.canvas.classList.add('dragging');
+                    this.canvas.style.cursor = 'grabbing';
+                }
+            }
+
+            handleMove(e) {
+                if (!this.isDragging || !this.dragTarget) return;
+                
+                const pos = this.getMousePos(e);
+                const { side, part, center } = this.dragTarget;
+                
+                let angle;
+                if (part === 'leg') {
+                    // Calculate angle from pivot to mouse
+                    const dx = pos.x - center.x;
+                    const dy = pos.y - center.y;
+                    angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                    // Clamp to valid range
+                    angle = Math.max(-15, Math.min(105, angle));
+                } else {
+                    // For joint, calculate relative to leg angle
+                    const dx = pos.x - center.x;
+                    const dy = pos.y - center.y;
+                    const absoluteAngle = Math.atan2(dy, dx) * 180 / Math.PI;
+                    const legAngle = this.state[`${side}_leg`].angle;
+                    angle = absoluteAngle - legAngle;
+                    // Clamp to valid range [0, 60]
+                    angle = Math.max(0, Math.min(60, angle));
+                }
+                
+                // Update state
+                this.state[`${side}_${part}`].angle = angle;
+                
+                // Notify controller
+                if (this.onAngleChange) {
+                    this.onAngleChange(side, part, angle);
+                }
+                
+                this.render(this.state);
+            }
+
+            handleEnd() {
+                this.isDragging = false;
+                this.dragTarget = null;
+                this.canvas.classList.remove('dragging');
+                this.canvas.style.cursor = 'crosshair';
+            }
+
+            render(state) {
+                this.state = state;
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.drawGrid();
+                
+                this.ctx.fillStyle = this.colors.label;
+                this.ctx.font = 'bold 16px Segoe UI';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText('Robot Leg Visualization', this.centerX, 30);
+                
+                this.drawLeg('left', state.left_leg.angle, state.left_joint.angle);
+                this.drawLeg('right', state.right_leg.angle, state.right_joint.angle);
+                
+                // Draw drag handles highlight if not dragging
+                if (!this.isDragging) {
+                    this.drawHandles();
+                }
+            }
+
+            drawGrid() {
+                this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+                this.ctx.lineWidth = 1;
+                for (let x = 0; x <= this.canvas.width; x += 50) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x, 0);
+                    this.ctx.lineTo(x, this.canvas.height);
+                    this.ctx.stroke();
+                }
+                for (let y = 0; y <= this.canvas.height; y += 50) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, y);
+                    this.ctx.lineTo(this.canvas.width, y);
+                    this.ctx.stroke();
+                }
+            }
+
+            drawHandles() {
+                // Draw subtle rings around draggable points
+                for (const side of ['left', 'right']) {
+                    const geom = this.getLegGeometry(side);
+                    
+                    // Pivot handle
+                    this.ctx.beginPath();
+                    this.ctx.strokeStyle = 'rgba(255, 152, 0, 0.3)';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.arc(geom.pivot.x, geom.pivot.y, this.dragThreshold, 0, 2 * Math.PI);
+                    this.ctx.stroke();
+                    
+                    // Knee handle
+                    this.ctx.beginPath();
+                    this.ctx.strokeStyle = 'rgba(76, 175, 80, 0.3)';
+                    this.ctx.arc(geom.knee.x, geom.knee.y, this.dragThreshold, 0, 2 * Math.PI);
+                    this.ctx.stroke();
+                }
+            }
+
+            drawLeg(side, legAngle, jointRelativeAngle) {
+                const geom = this.getLegGeometry(side);
+                
+                // Draw leg
+                this.ctx.beginPath();
+                this.ctx.strokeStyle = this.colors.leg;
+                this.ctx.lineWidth = 8;
+                this.ctx.lineCap = 'round';
+                this.ctx.moveTo(geom.pivot.x, geom.pivot.y);
+                this.ctx.lineTo(geom.knee.x, geom.knee.y);
+                this.ctx.stroke();
+                
+                // Draw pivot
+                this.ctx.beginPath();
+                this.ctx.fillStyle = this.colors.pivot;
+                this.ctx.arc(geom.pivot.x, geom.pivot.y, 8, 0, 2 * Math.PI);
+                this.ctx.fill();
+                
+                // Draw knee
+                this.ctx.beginPath();
+                this.ctx.fillStyle = this.colors.joint;
+                this.ctx.arc(geom.knee.x, geom.knee.y, 6, 0, 2 * Math.PI);
+                this.ctx.fill();
+                
+                // Draw joint
+                this.ctx.beginPath();
+                this.ctx.strokeStyle = this.colors.joint;
+                this.ctx.lineWidth = 6;
+                this.ctx.lineCap = 'round';
+                this.ctx.moveTo(geom.knee.x, geom.knee.y);
+                this.ctx.lineTo(geom.foot.x, geom.foot.y);
+                this.ctx.stroke();
+                
+                // Draw foot
+                this.ctx.beginPath();
+                this.ctx.fillStyle = '#888';
+                this.ctx.arc(geom.foot.x, geom.foot.y, 5, 0, 2 * Math.PI);
+                this.ctx.fill();
+                
+                // Labels
+                const labelSide = side === 'left' ? -1 : 1;
+                this.drawLabel(geom.pivot.x + (labelSide * 60), geom.pivot.y - 10, 
+                    `${side.charAt(0).toUpperCase() + side.slice(1)} Leg`, `${legAngle.toFixed(1)}°`);
+                this.drawLabel(geom.knee.x + (labelSide * 50), geom.knee.y + 20, 
+                    'Joint', `${jointRelativeAngle.toFixed(1)}° rel`);
+            }
+
+            drawLabel(x, y, title, value) {
+                this.ctx.font = 'bold 11px Segoe UI';
+                this.ctx.textAlign = 'center';
+                const titleWidth = this.ctx.measureText(title).width;
+                const valueWidth = this.ctx.measureText(value).width;
+                const width = Math.max(titleWidth, valueWidth) + 16;
+                this.ctx.fillStyle = this.colors.labelBg;
+                this.ctx.beginPath();
+                this.ctx.roundRect(x - width/2, y - 10, width, 36, 4);
+                this.ctx.fill();
+                this.ctx.fillStyle = this.colors.label;
+                this.ctx.fillText(title, x, y + 5);
+                this.ctx.fillStyle = '#FF9800';
+                this.ctx.font = '12px Segoe UI';
+                this.ctx.fillText(value, x, y + 20);
+            }
+        }
+
+        class RobotController {
+            constructor() {
+                this.socket = null;
+                this.canvas = null;
+                this.reconnectAttempts = 0;
+                this.maxReconnectAttempts = 10;
+                this.init();
+            }
+
+            init() {
+                // Initialize canvas with callback for drag events
+                this.canvas = new RobotCanvas('robot-canvas', (side, part, angle) => {
+                    this.handleCanvasDrag(side, part, angle);
+                });
+                
+                this.connectSocket();
+                this.setupSliders();
+                this.setupButtons();
+            }
+
+            handleCanvasDrag(side, part, angle) {
+                // Update slider and display
+                const sliderId = `${side}-${part}-slider`;
+                const valueId = `${side}-${part}-value`;
+                
+                document.getElementById(sliderId).value = angle;
+                document.getElementById(valueId).textContent = `${angle.toFixed(1)}°`;
+                
+                // Emit to server
+                if (this.socket && this.socket.connected) {
+                    const eventName = part === 'leg' ? 'set_leg' : 'set_joint';
+                    this.socket.emit(eventName, { side: side, angle: angle });
+                }
+            }
+
+            connectSocket() {
+                this.socket = io({
+                    reconnection: true,
+                    reconnectionAttempts: this.maxReconnectAttempts,
+                    reconnectionDelay: 1000,
+                    reconnectionDelayMax: 5000
+                });
+
+                this.socket.on('connect', () => {
+                    console.log('Connected to server');
+                    this.setConnectionStatus(true);
+                    this.reconnectAttempts = 0;
+                    this.socket.emit('get_status');
+                });
+
+                this.socket.on('disconnect', () => {
+                    console.log('Disconnected from server');
+                    this.setConnectionStatus(false);
+                });
+
+                this.socket.on('connect_error', (error) => {
+                    console.error('Connection error:', error);
+                    this.reconnectAttempts++;
+                });
+
+                this.socket.on('state_update', (state) => {
+                    this.updateUI(state);
+                    this.canvas.render(state);
+                });
+
+                this.socket.on('error', (data) => {
+                    console.error('Server error:', data.message);
+                    this.showToast(data.message, 'error');
+                });
+            }
+
+            setConnectionStatus(connected) {
+                const statusEl = document.getElementById('connection-status');
+                if (connected) {
+                    statusEl.textContent = 'Connected';
+                    statusEl.className = 'connected';
+                } else {
+                    statusEl.textContent = 'Disconnected';
+                    statusEl.className = 'disconnected';
+                }
+            }
+
+            setupSliders() {
+                const getCurrentState = () => ({
+                    left_leg: { angle: parseFloat(document.getElementById('left-leg-slider').value) },
+                    right_leg: { angle: parseFloat(document.getElementById('right-leg-slider').value) },
+                    left_joint: { angle: parseFloat(document.getElementById('left-joint-slider').value) },
+                    right_joint: { angle: parseFloat(document.getElementById('right-joint-slider').value) }
+                });
+
+                const leftLegSlider = document.getElementById('left-leg-slider');
+                leftLegSlider.addEventListener('input', (e) => {
+                    const angle = parseFloat(e.target.value);
+                    document.getElementById('left-leg-value').textContent = `${angle.toFixed(1)}°`;
+                    const state = getCurrentState();
+                    state.left_leg.angle = angle;
+                    this.canvas.render(state);
+                    this.socket.emit('set_leg', { side: 'left', angle: angle });
+                });
+
+                const rightLegSlider = document.getElementById('right-leg-slider');
+                rightLegSlider.addEventListener('input', (e) => {
+                    const angle = parseFloat(e.target.value);
+                    document.getElementById('right-leg-value').textContent = `${angle.toFixed(1)}°`;
+                    const state = getCurrentState();
+                    state.right_leg.angle = angle;
+                    this.canvas.render(state);
+                    this.socket.emit('set_leg', { side: 'right', angle: angle });
+                });
+
+                const leftJointSlider = document.getElementById('left-joint-slider');
+                leftJointSlider.addEventListener('input', (e) => {
+                    const angle = parseFloat(e.target.value);
+                    document.getElementById('left-joint-value').textContent = `${angle.toFixed(1)}°`;
+                    const state = getCurrentState();
+                    state.left_joint.angle = angle;
+                    this.canvas.render(state);
+                    this.socket.emit('set_joint', { side: 'left', angle: angle });
+                });
+
+                const rightJointSlider = document.getElementById('right-joint-slider');
+                rightJointSlider.addEventListener('input', (e) => {
+                    const angle = parseFloat(e.target.value);
+                    document.getElementById('right-joint-value').textContent = `${angle.toFixed(1)}°`;
+                    const state = getCurrentState();
+                    state.right_joint.angle = angle;
+                    this.canvas.render(state);
+                    this.socket.emit('set_joint', { side: 'right', angle: angle });
+                });
+            }
+
+            setupButtons() {
+                const sendBtn = document.getElementById('send-btn');
+                sendBtn.addEventListener('click', () => {
+                    this.socket.emit('send_now');
+                    this.showToast('Data sent!', 'success');
+                });
+
+                sendBtn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.socket.emit('send_now');
+                    this.showToast('Data sent!', 'success');
+                });
+            }
+
+            updateUI(state) {
+                document.getElementById('left-leg-slider').value = state.left_leg.angle;
+                document.getElementById('left-leg-value').textContent = `${state.left_leg.angle.toFixed(1)}°`;
+                document.getElementById('right-leg-slider').value = state.right_leg.angle;
+                document.getElementById('right-leg-value').textContent = `${state.right_leg.angle.toFixed(1)}°`;
+                document.getElementById('left-joint-slider').value = state.left_joint.angle;
+                document.getElementById('left-joint-value').textContent = `${state.left_joint.angle.toFixed(1)}°`;
+                document.getElementById('right-joint-slider').value = state.right_joint.angle;
+                document.getElementById('right-joint-value').textContent = `${state.right_joint.angle.toFixed(1)}°`;
+            }
+
+            showToast(message, type = 'info') {
+                let toast = document.getElementById('toast');
+                if (!toast) {
+                    toast = document.createElement('div');
+                    toast.id = 'toast';
+                    document.body.appendChild(toast);
+                }
+                const colors = { success: '#4CAF50', error: '#f44336', info: '#2196F3' };
+                toast.style.background = colors[type] || colors.info;
+                toast.textContent = message;
+                toast.style.opacity = '1';
+                setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            window.robotController = new RobotController();
+        });
+    </script>
+</body>
+</html>
